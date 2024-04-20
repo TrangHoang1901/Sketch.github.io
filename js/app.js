@@ -1,3 +1,5 @@
+
+// Instialize Data
 let data = {
   nodes: [
     {index: 0},
@@ -176,6 +178,30 @@ function update() {
 
   force.start();
   clearSelection();
+
+  // First, reset all degrees to zero
+  data.nodes.forEach(node => { node.degree = 0; });
+
+  // Then, iterate over all links to calculate degrees
+  data.links.forEach(link => {
+    link.source.degree = (link.source.degree || 0) + 1;
+    link.target.degree = (link.target.degree || 0) + 1;
+  });
+
+  // Display the number of vertices and edges
+  d3.select('#info-vertices').text(`Vertices: ${data.nodes.length}`);
+  d3.select('#info-edges').text(`Edges: ${data.links.length}`);
+
+  // Display the degrees of vertices
+  const degreesList = d3.select('#info-degrees').selectAll('li')
+    .data(data.nodes, d => d.id); // Use a key function for object constancy
+
+  degreesList.enter()
+    .append('li')
+    .merge(degreesList)
+    .text(d => `Node ${d.id}: Degree ${d.degree}`);
+
+  degreesList.exit().remove();
 
 }
 
