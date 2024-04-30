@@ -1,15 +1,8 @@
 // Initialize Data with labels
 let data = {
-  nodes: [
-    {index: 0, label: 'v1'},
-    {index: 1, label: 'v2'},
-    {index: 2, label: 'v3'}
-  ],
-  node_count: 3,
-  links: [
-    {source: 0, target: 1},
-    {source: 1, target: 2}
-  ]
+  nodes: [],
+  node_count: 0,
+  links: []
 };
 
 const radius = 16;
@@ -72,6 +65,10 @@ force.on("tick", () => {
     .attr('cx', (d) => d.x)
     .attr('cy', (d) => d.y)
     .call(force.drag());
+
+  // Update node positions
+  svg.selectAll(".node-group")
+    .attr("transform", d => `translate(${d.x},${d.y})`);
 
 });
 
@@ -164,27 +161,62 @@ function addEdge(node1, node2) {
   update();
 }
 
+// Define the deleteEdge function
+function deleteEdge(d) {
+  // Prevent any node click events
+  d3.event.stopPropagation();
+
+  // Remove the link from the data
+  data.links = data.links.filter(l => l !== d);
+
+  // Update the visualization
+  update();
+}
+
 function update() {
   link = link.data(data.links);
 
   link.enter()
     .append("line")
-    .attr("class", "link");
+    .attr("class", "link")
+    .on('mousedown', deleteEdge); // Add this line to handle click events on links
 
   link.exit().remove();
 
   d3.selectAll('line')
     .moveToBack();
-
+  
+  // Update the nodes
   node = node.data(data.nodes);
 
-  node.enter()
-    .append("circle")
-    .attr("class", 'node')
+  // Enter any new nodes
+  const nodeEnter = node.enter()
+    .append("g")
+    .attr("class", "node-group");
+
+    nodeEnter.append("circle")
+    .attr("class", "node")
     .attr("r", radius)
     .attr('stroke-width', 1.5)
     .on('mousedown', nodeMouseDown);
 
+  // Enter new labels
+  nodeEnter.append("text")
+    .attr("class", "label")
+    .attr("dx", 12)
+    .attr("dy", ".35em")
+    .text(d => d.label);
+
+  // Update all nodes
+  node.select("circle")
+    .attr("r", radius)
+    .attr('stroke-width', 1.5);
+
+  // Update all labels
+  node.select("text")
+    .text(d => d.label);
+
+  // Remove old nodes
   node.exit().remove();
 
   force.start();
