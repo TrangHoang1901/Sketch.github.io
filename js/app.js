@@ -111,7 +111,6 @@ function nodeMouseDown() {
     .attr('stroke-width', 3);
 
   addEdge(firstNode, d3.select(this).data()[0]);
-
 }
 
 
@@ -201,9 +200,32 @@ function deleteEdge(d) {
   data.nodes[d.source.index].degree--;
   data.nodes[d.target.index].degree--;
 
-  // Update the visualization
+}
+
+// Function to create a loop for a selected node
+function createLoopForSelectedNode() {
+  const selectedNodeData = d3.selectAll('.selected').data()[0];
+  if (!selectedNodeData) {
+    alert("Please select a node to create a loop.");
+    return;
+  }
+
+  // Check if a loop already exists
+  const loopExists = data.links.some(link => link.source.index === selectedNodeData.index && link.target.index === selectedNodeData.index);
+  if (loopExists) {
+    alert("A loop already exists for this node.");
+    return;
+  }
+
+  // Add a loop to the selected node
+  data.links.push({ source: selectedNodeData.index, target: selectedNodeData.index });
+
+  // Update the graph
   update();
 }
+
+// Add event listener to the loop creation button
+d3.select('#create-loop-button').on('click', createLoopForSelectedNode);
 
 function update() {
   link = link.data(data.links);
@@ -231,6 +253,7 @@ function update() {
     .attr("r", radius)
     .attr('stroke-width', 1.5)
     .on('mousedown', nodeMouseDown);
+
 
   // Enter new labels
   nodeEnter.append("text")
@@ -263,7 +286,7 @@ function update() {
   clearSelection();
 
   // Calculate Degree
-  calculateDegrees();
+  // calculateDegrees();
 
   // Display the number of vertices and edges
   d3.select('#info-vertices').text(`Vertices: ${data.nodes.length}`);

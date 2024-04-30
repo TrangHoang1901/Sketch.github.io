@@ -45,12 +45,12 @@ a:hover {
 }
 
 .node {
-  fill: #0198E1;
-  stroke: black;
+  fill: #fff;
+  stroke: #999999;
 }
 
 .link {
-  stroke: #999999;
+  stroke: #51aeae;
   stroke-opacity: 0.6;
   stroke-width: 10px;
 }
