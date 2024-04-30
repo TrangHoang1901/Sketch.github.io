@@ -128,7 +128,7 @@ function clearSelection() {
 function addNode() {
   const pos = d3.mouse(this);
   const newNodeIndex = data.node_count++;
-  data.nodes.push({index: newNodeIndex, label: `v${newNodeIndex + 1}`, x: pos[0], y: pos[1]});
+  data.nodes.push({index: newNodeIndex, label: `v${newNodeIndex + 1}`, x: pos[0], y: pos[1], degree: 0});
 
   update();
 }
@@ -182,6 +182,10 @@ function addEdge(node1, node2) {
   if (overlap) return null;
   data.links.push({source: node1.index, target: node2.index});
 
+  // Update degrees for the two nodes involved
+  data.nodes[node1.index].degree++;
+  data.nodes[node2.index].degree++;
+
   update();
 }
 
@@ -192,6 +196,10 @@ function deleteEdge(d) {
 
   // Remove the link from the data
   data.links = data.links.filter(l => l !== d);
+
+  // Update degrees for the two nodes involved
+  data.nodes[d.source.index].degree--;
+  data.nodes[d.target.index].degree--;
 
   // Update the visualization
   update();
@@ -229,7 +237,7 @@ function update() {
     .attr("class", "label")
     .attr("dx", 12)
     .attr("dy", ".35em")
-    .text(d => d.label);
+    .text(d => `${d.label}: ${d.degree}`); // Update the label with the degree
 
   // Update all nodes
   node.select("circle")
@@ -238,20 +246,7 @@ function update() {
 
   // Update all labels
   node.select("text")
-    .text(d => d.label);
-
-  // Remove old nodes
-  node.exit().remove();
-
-  force.start();
-  clearSelection();
-
-  // Display the number of vertices and edges
-  d3.select('#info-vertices').text(`Vertices: ${data.nodes.length}`);
-  d3.select('#info-edges').text(`Edges: ${data.links.length}`);
-
-  // Calculate degrees
-  calculateDegrees();
+    .text(d => `${d.label}: ${d.degree}`); // Include the degree in the label
 
   // Update the degree display for each node
   node.each(function(d) {
@@ -260,6 +255,19 @@ function update() {
       .select('title') // You might need to add this element to display the degree
       .text(`Degree: ${d.degree}`);
   });
+
+  // Remove old nodes
+  node.exit().remove();
+
+  force.start();
+  clearSelection();
+
+  // Calculate Degree
+  calculateDegrees();
+
+  // Display the number of vertices and edges
+  d3.select('#info-vertices').text(`Vertices: ${data.nodes.length}`);
+  d3.select('#info-edges').text(`Edges: ${data.links.length}`);
 
   // Update the info display for degrees
   d3.select('#info-degrees').text(`Degrees: ${data.nodes.map(node => node.degree).join(', ')}`);
