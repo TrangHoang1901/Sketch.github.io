@@ -28,16 +28,24 @@
     <p id="info-degrees">Degrees: </p>
   </div>
 
+  <!--
+  <div id="loop-info">
+    <h3>Loops</h3>
+    <ul id="loop-list"></ul>
+  </div>-->
+
   <div id="Add a single loop button">
     <button id="create-loop-button">Create a single Loop</button>
+  </div>
+
+  <div id="custom-loop-creation">
+    <input type="text" id="vertex-count-input" placeholder="Enter number of vertices (3-10)"/>
+    <button id="create-custom-loop-button">Create Custom Loop</button>
   </div>
 
   <div>
     <p>Color Bar</p>
   </div>
-
-  <!-- The SVG element or container for the graph will be created by D3.js in the app.js file -->
-  <!-- Typically, it would be something like <svg></svg> or <div id="graph"></div> -->
 
   <script src="https://d3js.org/d3.v3.min.js"></script>
   <script src='./js/app.js'></script>

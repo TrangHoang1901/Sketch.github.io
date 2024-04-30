@@ -234,6 +234,78 @@ function createLoopForSelectedNode() {
 // Add event listener to the loop creation button
 d3.select('#create-loop-button').on('click', createLoopForSelectedNode);
 
+// Update the loop information display
+function updateLoopInfo() {
+  // Select the loop list element
+  const loopList = d3.select('#loop-list');
+
+  // Remove any existing loop information
+  loopList.selectAll('li').remove();
+
+  // Filter the links to get only loops
+  const loops = data.links.filter(link => link.source.index === link.target.index);
+
+  // Append a list item for each loop with the vertex label
+  loops.forEach(loop => {
+    loopList.append('li')
+      .text(`Loop: Vertex ${loop.source.label}`);
+  });
+}
+
+// Add event listener to the custom loop creation button
+d3.select('#create-custom-loop-button').on('click', createCustomLoop);
+
+// Function to create a loop with a specified number of vertices
+function createCustomLoop() {
+  // Read the number of vertices from the input field
+  // const numberOfVertices = parseInt(document.getElementById('vertex-count-input').value);
+
+  // Get the input field element
+  const inputElement = document.getElementById('vertex-count-input');
+  
+  // Read the number of vertices from the input field
+  const numberOfVertices = parseInt(inputElement.value);
+
+  // Validate the input
+  if (isNaN(numberOfVertices) || numberOfVertices < 3 || numberOfVertices > 10) {
+    alert("Please enter a valid number of vertices between 3 and 10.");
+    return;
+  }
+
+  const angleStep = (Math.PI * 2) / numberOfVertices;
+  let lastNodeIndex = null;
+  let firstNodeIndex = null;
+
+  // Create the vertices
+  for (let i = 0; i < numberOfVertices; i++) {
+    const angle = i * angleStep;
+    const x = center[0] + 150 * Math.cos(angle);
+    const y = center[1] + 150 * Math.sin(angle);
+    const newNodeIndex = data.node_count++;
+    const newNode = {index: newNodeIndex, label: `v${newNodeIndex + 1}`, x: x, y: y, degree: 0};
+    data.nodes.push(newNode);
+
+    // Connect the vertices
+    if (lastNodeIndex !== null) {
+      addEdge(data.nodes[lastNodeIndex], newNode);
+    } else {
+      firstNodeIndex = newNodeIndex;
+    }
+    lastNodeIndex = newNodeIndex;
+  }
+
+  // Connect the last vertex to the first to close the loop
+  if (firstNodeIndex !== null && lastNodeIndex !== null) {
+    addEdge(data.nodes[lastNodeIndex], data.nodes[firstNodeIndex]);
+  }
+
+  // Update the graph
+  update();
+
+  // Clear the input field after creating the loop
+  inputElement.value = '';
+}
+
 function update() {
   link = link.data(data.links);
 
@@ -312,8 +384,6 @@ loops.exit().remove();
   force.start();
   clearSelection();
 
-  // Calculate Degree
-  // calculateDegrees();
 
   // Display the number of vertices and edges
   d3.select('#info-vertices').text(`Vertices: ${data.nodes.length}`);
@@ -322,8 +392,9 @@ loops.exit().remove();
   // Update the info display for degrees
   d3.select('#info-degrees').text(`Degrees: ${data.nodes.map(node => node.degree).join(', ')}`);
 
-  // Add this line to create the #info-degrees paragraph in your HTML
-  // d3.select('#graph-info').append('p').attr('id', 'info-degrees').text('Degrees: ');
+  // Update the loop information display
+  updateLoopInfo();
+  
 }
 
 force.start();

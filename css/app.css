@@ -103,6 +103,23 @@ li {
   margin-bottom: 5px;
 }
 
+.loop-info {
+  margin-top: 20px;
+}
+
+.loop-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.loop-list li {
+  margin-bottom: 5px;
+  padding: 5px;
+  background-color: #f3f3f3;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
 
 
 
