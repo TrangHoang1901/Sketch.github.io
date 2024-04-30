@@ -10,6 +10,16 @@ const radius = 16;
 const width = 850;
 const height = 575;
 const center = [width/2, height / 2];
+const colors = ['#86E1E0', '#f7abc7', '#c5ea8b', '#fde780', '#ee9392', '#b494c5'];
+
+// Create a button for each color
+colors.forEach(color => {
+  d3.select('body').append('button')
+    .style('background-color', color)
+    .attr('class', 'color-button')
+    .attr('data-color', color)
+    .text(color);
+});
 
 d3.selection.prototype.moveToBack = function() {
   return this.each(function() {
@@ -72,6 +82,14 @@ force.on("tick", () => {
 
 });
 
+// Variable to hold the current selected color
+let currentColor = '#86E1E0'; // Default color
+
+// Add event listeners to the color buttons
+d3.selectAll('.color-button').on('click', function() {
+  currentColor = d3.select(this).attr('data-color');
+});
+
 function nodeMouseDown() {
   d3.event.stopPropagation();
 
@@ -82,6 +100,7 @@ function nodeMouseDown() {
   const node = d3.select(this);
 
   node.classed('selected', true);
+  node.style('fill', currentColor); 
   node.transition()
     .duration(100)
     .attr('r', 19)
@@ -94,6 +113,8 @@ function nodeMouseDown() {
   addEdge(firstNode, d3.select(this).data()[0]);
 
 }
+
+
 
 function clearSelection() {
   d3.selectAll('.selected')
@@ -113,21 +134,24 @@ function addNode() {
 }
 
 function deleteNode() {
-  if(d3.event.code === 'Backspace') {
+  if (d3.event.code === 'Backspace') {
     d3.event.preventDefault();
 
-    const nodeData = d3.selectAll('.selected').data()[0];
-    if (!nodeData) return null;
-    const nodeIndex = data.nodes.indexOf(nodeData);
-    data.nodes.splice(nodeIndex, 1);
-    const edges = data.links.filter(linkObj => {
-      return (
-        linkObj.source.index === nodeIndex || linkObj.target.index === nodeIndex
-      );
+    const selectedNodeData = d3.selectAll('.selected').data()[0];
+    if (!selectedNodeData) return;
+
+    // Remove the node
+    data.nodes = data.nodes.filter(node => node.index !== selectedNodeData.index);
+
+    // Update the links
+    data.links = data.links.filter(link => {
+      return link.source.index !== selectedNodeData.index && link.target.index !== selectedNodeData.index;
     });
-    edges.forEach( edge => {
-      const edgeIndex = data.links.indexOf(edge);
-      data.links.splice(edgeIndex, 1);
+
+    // Adjust the indices in the links
+    data.links.forEach(link => {
+      if (link.source.index > selectedNodeData.index) link.source = data.nodes[link.source.index - 1];
+      if (link.target.index > selectedNodeData.index) link.target = data.nodes[link.target.index - 1];
     });
 
     update();
