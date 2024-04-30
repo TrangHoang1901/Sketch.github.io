@@ -1,10 +1,9 @@
-
-// Instialize Data
+// Initialize Data with labels
 let data = {
   nodes: [
-    {index: 0},
-    {index: 1},
-    {index: 2}
+    {index: 0, label: 'v1'},
+    {index: 1, label: 'v2'},
+    {index: 2, label: 'v3'}
   ],
   node_count: 3,
   links: [
@@ -110,7 +109,8 @@ function clearSelection() {
 
 function addNode() {
   const pos = d3.mouse(this);
-  data.nodes.push({index: data.node_count++, x: pos[0], y: pos[1]});
+  const newNodeIndex = data.node_count++;
+  data.nodes.push({index: newNodeIndex, label: `v${newNodeIndex + 1}`, x: pos[0], y: pos[1]});
 
   update();
 }
@@ -135,6 +135,17 @@ function deleteNode() {
 
     update();
   }
+}
+
+function calculateDegrees() {
+  // Reset degrees
+  data.nodes.forEach(node => { node.degree = 0; });
+
+  // Calculate degree by counting how many links each node has
+  data.links.forEach(link => {
+    data.nodes[link.source.index].degree++;
+    data.nodes[link.target.index].degree++;
+  });
 }
 
 function addEdge(node1, node2) {
@@ -179,30 +190,26 @@ function update() {
   force.start();
   clearSelection();
 
-  // First, reset all degrees to zero
-  data.nodes.forEach(node => { node.degree = 0; });
-
-  // Then, iterate over all links to calculate degrees
-  data.links.forEach(link => {
-    link.source.degree = (link.source.degree || 0) + 1;
-    link.target.degree = (link.target.degree || 0) + 1;
-  });
-
   // Display the number of vertices and edges
   d3.select('#info-vertices').text(`Vertices: ${data.nodes.length}`);
   d3.select('#info-edges').text(`Edges: ${data.links.length}`);
 
-  // Display the degrees of vertices
-  const degreesList = d3.select('#info-degrees').selectAll('li')
-    .data(data.nodes, d => d.id); // Use a key function for object constancy
+  // Calculate degrees
+  calculateDegrees();
 
-  degreesList.enter()
-    .append('li')
-    .merge(degreesList)
-    .text(d => `Node ${d.id}: Degree ${d.degree}`);
+  // Update the degree display for each node
+  node.each(function(d) {
+    d3.select(this)
+      .attr('data-degree', d.degree) // Set a data attribute for the degree
+      .select('title') // You might need to add this element to display the degree
+      .text(`Degree: ${d.degree}`);
+  });
 
-  degreesList.exit().remove();
+  // Update the info display for degrees
+  d3.select('#info-degrees').text(`Degrees: ${data.nodes.map(node => node.degree).join(', ')}`);
 
+  // Add this line to create the #info-degrees paragraph in your HTML
+  // d3.select('#graph-info').append('p').attr('id', 'info-degrees').text('Degrees: ');
 }
 
 force.start();
