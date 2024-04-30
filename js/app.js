@@ -80,10 +80,17 @@ force.on("tick", () => {
   svg.selectAll(".node-group")
     .attr("transform", d => `translate(${d.x},${d.y})`);
 
+  // Update loop positions
+  svg.selectAll('.loop')
+  .attr('d', d => {
+    const x = d.source.x;
+    const y = d.source.y;
+    const dx = radius * 2;
+    const dy = radius * 2;
+    return `M${x},${y} C${x + dx},${y - dy} ${x - dx},${y - dy} ${x},${y}`;
+  });
 });
 
-// Variable to hold the current selected color
-let currentColor = '#86E1E0'; // Default color
 
 // Add event listeners to the color buttons
 d3.selectAll('.color-button').on('click', function() {
@@ -281,6 +288,26 @@ function update() {
 
   // Remove old nodes
   node.exit().remove();
+
+// Handle loops (edges that connect a node to itself)
+const loops = svg.selectAll('.loop')
+.data(data.links.filter(link => link.source.index === link.target.index));
+
+loops.enter()
+.append('path')
+.classed('loop', true)
+.attr('d', d => {
+  // This is a simple way to create a loop path, you might want to customize it
+  const x = d.source.x;
+  const y = d.source.y;
+  const dx = radius * 2;
+  const dy = radius * 2;
+  return `M${x},${y} C${x + dx},${y - dy} ${x - dx},${y - dy} ${x},${y}`;
+})
+.style('fill', 'none')
+.style('stroke', '#000');
+
+loops.exit().remove();
 
   force.start();
   clearSelection();
