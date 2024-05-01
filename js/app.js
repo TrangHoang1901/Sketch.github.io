@@ -5,6 +5,7 @@ let data = {
   links: []
 };
 
+
 const radius = 16;
 
 const width = 850;
@@ -397,4 +398,7 @@ loops.exit().remove();
   
 }
 
+
 force.start();
+
+

@@ -1,51 +1,89 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Graph Builder</title>
-  <link rel="shortcut icon" type="image/x-icon" href="http://s10.postimg.org/j46yhe12x/icon.png" />
+  <link rel="icon" type="image/png" href="http://s10.postimg.org/j46yhe12x/icon.png" />
   <link rel="stylesheet" href="./css/app.css">
-  <link href="https://fonts.googleapis.com/css?family=Muli" rel="stylesheet">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Muli:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    body {
+      font-family: 'Muli', sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .intro, #graph-info, #custom-loop-creation {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .title {
+      color: #5D5C61;
+      font-size: 2.5rem;
+    }
+    .instructions {
+      color: #379683;
+    }
+    button {
+      background-color: #557A95;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #417B5A;
+    }
+    input[type="text"] {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      margin-bottom: 10px;
+    }
+    #graph-info p, #custom-loop-creation p {
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
-  <div class="intro">
+  <header class="intro">
     <h1 class="title">Graph Builder</h1>
     <p class="instructions">
-      Thank you for visiting my graph builder, using D3's force layout.
+      Explore the interactive world of graphs with our D3 force layout graph builder.
       <br>(1) Click within the border to add a node.
-      <br>(2) Try dragging a node around the graph.
-      <br>(3) Select a node by clicking it.
-      <br>(4) What happens when you hit the delete key?
-      <br>(5) Select two nodes to add an edge between them.
+      <br>(2) Drag a node to reposition it within the graph.
+      <br>(3) Click a node to select it.
+      <br>(4) See what unfolds when you press the delete key.
+      <br>(5) Connect two nodes by selecting them to create an edge.
     </p>
-  </div>
+  </header>
 
-  <div id="graph-info">
+  <section id="graph-info">
     <p id="info-vertices">Vertices: 0</p>
     <p id="info-edges">Edges: 0</p>
     <p id="info-degrees">Degrees: </p>
-  </div>
+  </section>
 
-  <!--
-  <div id="loop-info">
-    <h3>Loops</h3>
-    <ul id="loop-list"></ul>
-  </div>-->
+  <section id="loop-controls">
+    <div>
+      <button id="create-loop-button">Create a Single Loop</button>
+    </div>
+    <div id="custom-loop-creation">
+      <input type="text" id="vertex-count-input" placeholder="Enter number of vertices (3-10)" aria-label="Enter number of vertices"/>
+      <button id="create-custom-loop-button">Create Custom Loop</button>
+    </div>
+  </section>
 
-  <div id="Add a single loop button">
-    <button id="create-loop-button">Create a single Loop</button>
-  </div>
-
-  <div id="custom-loop-creation">
-    <input type="text" id="vertex-count-input" placeholder="Enter number of vertices (3-10)"/>
-    <button id="create-custom-loop-button">Create Custom Loop</button>
-  </div>
-
-  <div>
+  <footer>
     <p>Color Bar</p>
-  </div>
+  </footer>
 
   <script src="https://d3js.org/d3.v3.min.js"></script>
   <script src='./js/app.js'></script>
