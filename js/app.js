@@ -13,14 +13,41 @@ const height = 575;
 const center = [width/2, height / 2];
 const colors = ['#86E1E0', '#f7abc7', '#c5ea8b', '#fde780', '#ee9392', '#b494c5'];
 
+// Function to remove 'active' class from all buttons
+function removeActiveClasses() {
+  d3.selectAll('.color-button').classed('active', false);
+}
+
 // Create a button for each color
 colors.forEach(color => {
   d3.select('body').append('button')
     .style('background-color', color)
     .attr('class', 'color-button')
     .attr('data-color', color)
-    .text(color);
+    .text(color)
+    .on('click', function() {
+      // Remove 'active' class from all buttons
+      removeActiveClasses();
+      // Add 'active' class to the clicked button
+      d3.select(this).classed('active', true);
+    });
 });
+
+// Add some CSS for the 'active' class
+d3.select('head').append('style').text(`
+  .color-button {
+    padding: 10px;
+    border: none;
+    margin: 5px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+  }
+  .color-button.active {
+    opacity: 1;
+    border: 2px solid #000; /* Highlight with a border */
+  }
+`);
 
 d3.selection.prototype.moveToBack = function() {
   return this.each(function() {
