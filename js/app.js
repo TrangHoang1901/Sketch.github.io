@@ -6,7 +6,6 @@ let data = {
 };
 
 const radius = 16;
-
 const width = 850;
 const height = 575;
 const center = [width/2, height / 2];
@@ -31,6 +30,8 @@ d3.selection.prototype.moveToBack = function() {
 };
 
 d3.select('body').on('keydown', deleteNode);
+
+d3.select('#addParallelEdgeButton').on('click', addParallelEdge);
 
 const force = d3.layout.force()
   .nodes(data.nodes)
@@ -62,7 +63,7 @@ let node = svg.selectAll('circle')
   .attr('r', radius)
   .attr('stroke-width', 1.5)
   .classed('node', true)
-  .on('mousedown', nodeMouseDown);
+  .on('mousedown', nodeMouseDown)
 
 force.on("tick", () => {
   link
@@ -89,14 +90,28 @@ force.on("tick", () => {
     const dy = radius * 2;
     return `M${x},${y} C${x + dx},${y - dy} ${x - dx},${y - dy} ${x},${y}`;
   });
-});
 
+  // Update New link paths
+  link.attr('d', function(d) {
+    if (d.source.index === d.target.index) {
+      // Handle loops here
+    } else {
+      const dx = d.target.x - d.source.x,
+            dy = d.target.y - d.source.y,
+            dr = Math.sqrt(dx * dx + dy * dy);
+      // To change the arc, modify dr (the radius)
+      return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+    }
+  });
+
+});
 
 // Add event listeners to the color buttons
 d3.selectAll('.color-button').on('click', function() {
   currentColor = d3.select(this).attr('data-color');
 });
 
+// Modify the nodeMouseDown function to initiate dragging
 function nodeMouseDown() {
   d3.event.stopPropagation();
 
@@ -119,8 +134,6 @@ function nodeMouseDown() {
 
   addEdge(firstNode, d3.select(this).data()[0]);
 }
-
-
 
 function clearSelection() {
   d3.selectAll('.selected')
@@ -175,6 +188,7 @@ function calculateDegrees() {
   });
 }
 
+/*
 function addEdge(node1, node2) {
   if (!node1) return null;
   if (node1.index === node2.index) return null;
@@ -186,6 +200,28 @@ function addEdge(node1, node2) {
     }
   });
   if (overlap) return null;
+  data.links.push({source: node1.index, target: node2.index});
+
+  // Update degrees for the two nodes involved
+  data.nodes[node1.index].degree++;
+  data.nodes[node2.index].degree++;
+
+  update();
+}*/
+
+function addParallelEdge() {
+  const selectedNodes = d3.selectAll('.selected').data();
+  if (selectedNodes.length === 2) {
+    addEdge(selectedNodes[0], selectedNodes[1]);
+  } else {
+    alert("Please select exactly two nodes to create a parallel edge.");
+  }
+}
+
+function addEdge(node1, node2) {
+  if (!node1 || !node2 || node1.index === node2.index) return null;
+
+  // Allow parallel edges by not checking for overlap
   data.links.push({source: node1.index, target: node2.index});
 
   // Update degrees for the two nodes involved
@@ -361,25 +397,42 @@ function update() {
   // Remove old nodes
   node.exit().remove();
 
-// Handle loops (edges that connect a node to itself)
-const loops = svg.selectAll('.loop')
-.data(data.links.filter(link => link.source.index === link.target.index));
+  // Handle loops (edges that connect a node to itself)
+  const loops = svg.selectAll('.loop')
+    .data(data.links.filter(link => link.source.index === link.target.index));
 
-loops.enter()
-.append('path')
-.classed('loop', true)
-.attr('d', d => {
-  // This is a simple way to create a loop path, you might want to customize it
-  const x = d.source.x;
-  const y = d.source.y;
-  const dx = radius * 2;
-  const dy = radius * 2;
-  return `M${x},${y} C${x + dx},${y - dy} ${x - dx},${y - dy} ${x},${y}`;
-})
-.style('fill', 'none')
-.style('stroke', '#000');
+  loops.enter()
+    .append('path')
+    .classed('loop', true)
+    .attr('d', d => {
+      // This is a simple way to create a loop path, you might want to customize it
+      const x = d.source.x;
+      const y = d.source.y;
+      const dx = radius * 2;
+      const dy = radius * 2;
+      return `M${x},${y} C${x + dx},${y - dy} ${x - dx},${y - dy} ${x},${y}`;
+    })
+    .style('fill', 'none')
+    .style('stroke', '#000');
 
-loops.exit().remove();
+  loops.exit().remove();
+
+  // Handle parallel edges
+  link.attr('id', function(d, i) { return 'link' + i; })
+    .attr('class', 'link')
+    .each(function(d, i) {
+      // Calculate a path for parallel edges
+      if (document.querySelectorAll(`#link${i}`).length > 1) {
+        d3.select(this)
+          .attr('d', function(d) {
+            const dx = d.target.x - d.source.x,
+                  dy = d.target.y - d.source.y,
+                  dr = Math.sqrt(dx * dx + dy * dy);
+            // To change the arc, modify dr (the radius)
+            return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+          });
+      }
+    });
 
   force.start();
   clearSelection();
