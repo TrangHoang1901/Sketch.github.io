@@ -119,21 +119,3 @@ li {
   border: 1px solid #ddd;
   border-radius: 4px;
 }
-
-.color-btn {
-  padding: 10px;
-  border: none;
-  margin: 5px;
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity 0.3s ease;
-}
-
-.color-btn.active, .color-btn:focus {
-  opacity: 1;
-  outline: none; /* Optional: removes the default focus outline */
-}
-
-
-
-
