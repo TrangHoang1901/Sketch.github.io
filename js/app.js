@@ -36,6 +36,14 @@ let node = svg.selectAll('circle');
 createColorButtons();
 
 // Event listeners
+d3.selection.prototype.moveToBack = function() {
+  return this.each(function() {
+    var firstChild = this.parentNode.firstChild;
+    if (firstChild) {
+      this.parentNode.insertBefore(this, firstChild);
+    }
+  });
+};
 d3.select('body').on('keydown', deleteNode);
 d3.selectAll('.color-button').on('click', changeNodeColor);
 
@@ -312,14 +320,7 @@ function tick() {
 }
 
 // Helper functions
-d3.selection.prototype.moveToBack = function() {
-  return this.each(function() {
-    var firstChild = this.parentNode.firstChild;
-    if (firstChild) {
-      this.parentNode.insertBefore(this, firstChild);
-    }
-  });
-};
+
 
 function nodeMouseDown() {
   d3.event.stopPropagation();
@@ -387,24 +388,6 @@ function createLoopForSelectedNode() {
   update();
 }
 
-// Update the loop information display
-function updateLoopInfo() {
-  // Select the loop list element
-  const loopList = d3.select('#loop-list');
-
-  // Remove any existing loop information
-  loopList.selectAll('li').remove();
-
-  // Filter the links to get only loops
-  const loops = data.links.filter(link => link.source.index === link.target.index);
-
-  // Append a list item for each loop with the vertex label
-  loops.forEach(loop => {
-    loopList.append('li')
-      .text(`Loop: Vertex ${loop.source.label}`);
-  });
-}
-
 // Function to create a loop with a specified number of vertices
 function createCustomLoop() {
   // Read the number of vertices from the input field
@@ -456,6 +439,23 @@ function createCustomLoop() {
   inputElement.value = '';
 }
 
+// Update the loop information display
+function updateLoopInfo() {
+  // Select the loop list element
+  const loopList = d3.select('#loop-list');
+
+  // Remove any existing loop information
+  loopList.selectAll('li').remove();
+
+  // Filter the links to get only loops
+  const loops = data.links.filter(link => link.source.index === link.target.index);
+
+  // Append a list item for each loop with the vertex label
+  loops.forEach(loop => {
+    loopList.append('li')
+      .text(`Loop: Vertex ${loop.source.label}`);
+  });
+}
 
 // Call update to initialize the graph
 update();
