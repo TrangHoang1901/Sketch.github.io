@@ -5,14 +5,34 @@ let data = {
   links: []
 };
 
-// Constants and settings
 const radius = 16;
 const width = 850;
 const height = 575;
-const center = [width / 2, height / 2];
+const center = [width/2, height / 2];
 const colors = ['#86E1E0', '#f7abc7', '#c5ea8b', '#fde780', '#ee9392', '#b494c5'];
 
-// Force layout setup
+// Create a button for each color
+colors.forEach(color => {
+  d3.select('body').append('button')
+    .style('background-color', color)
+    .attr('class', 'color-button')
+    .attr('data-color', color)
+    .text(color);
+});
+
+d3.selection.prototype.moveToBack = function() {
+  return this.each(function() {
+      var firstChild = this.parentNode.firstChild;
+      if (firstChild) {
+          this.parentNode.insertBefore(this, firstChild);
+      }
+  });
+};
+
+d3.select('body').on('keydown', deleteNode);
+
+d3.select('#addParallelEdgeButton').on('click', addParallelEdge);
+
 const force = d3.layout.force()
   .nodes(data.nodes)
   .links(data.links)
@@ -20,7 +40,9 @@ const force = d3.layout.force()
   .linkDistance(150)
   .charge(-500);
 
-// SVG canvas setup
+const links = force.links();
+const nodes = force.nodes();
+
 const svg = d3.select("body")
   .append('svg')
   .attr('width', width)
@@ -28,55 +50,131 @@ const svg = d3.select("body")
   .attr('class', 'canvas')
   .on('mousedown', addNode);
 
-// Define selections for links and nodes
-let link = svg.selectAll('line');
-let node = svg.selectAll('circle');
+let link = svg.selectAll('line')
+  .data(data.links)
+  .enter()
+  .append('line')
+  .classed('link', true);
 
-// Color buttons creation
-createColorButtons();
+let node = svg.selectAll('circle')
+  .data(data.nodes)
+  .enter()
+  .append('circle')
+  .attr('r', radius)
+  .attr('stroke-width', 1.5)
+  .classed('node', true)
+  .on('mousedown', nodeMouseDown)
 
-// Event listeners
-d3.selection.prototype.moveToBack = function() {
-  return this.each(function() {
-    var firstChild = this.parentNode.firstChild;
-    if (firstChild) {
-      this.parentNode.insertBefore(this, firstChild);
+/*
+// Define the drag behavior
+var drag = force.drag()
+  .on("dragstart", dragstart)
+  .on("drag", dragmove)
+  .on("dragend", dragend);
+
+// Drag event handlers
+function dragstart(d) {
+  d3.event.sourceEvent.stopPropagation();
+  d.fixed = true; // Fix the position of the node
+}
+
+function dragmove(d) {
+  d.px += d3.event.dx;
+  d.py += d3.event.dy;
+  d.x += d3.event.dx;
+  d.y += d3.event.dy; 
+  force.resume(); // Resume the force layout
+}
+
+function dragend(d) {
+  d.fixed = false; // Unfix the position of the node on drag end
+}*/
+
+
+force.on("tick", () => {
+  link
+    .attr('x1', (d) => d.source.x)
+    .attr('y1', (d) => d.source.y)
+    .attr('x2', (d) => d.target.x)
+    .attr('y2', (d) => d.target.y);
+
+  node
+    .attr('cx', (d) => d.x)
+    .attr('cy', (d) => d.y)
+    .call(force.drag());
+    //.call(drag);
+
+  // Update node positions
+  svg.selectAll(".node-group")
+    .attr("transform", d => `translate(${d.x},${d.y})`);
+
+  // Update loop positions
+  svg.selectAll('.loop')
+  .attr('d', d => {
+    const x = d.source.x;
+    const y = d.source.y;
+    const dx = radius * 2;
+    const dy = radius * 2;
+    return `M${x},${y} C${x + dx},${y - dy} ${x - dx},${y - dy} ${x},${y}`;
+  });
+
+  // Update New link paths
+  link.attr('d', function(d) {
+    if (d.source.index === d.target.index) {
+      // Handle loops here
+    } else {
+      const dx = d.target.x - d.source.x,
+            dy = d.target.y - d.source.y,
+            dr = Math.sqrt(dx * dx + dy * dy);
+      // To change the arc, modify dr (the radius)
+      return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
     }
   });
-};
-d3.select('body').on('keydown', deleteNode);
-d3.selectAll('.color-button').on('click', changeNodeColor);
+
+});
 
 // Add event listeners to the color buttons
 d3.selectAll('.color-button').on('click', function() {
   currentColor = d3.select(this).attr('data-color');
 });
 
-// Add event listener to the loop creation button
-d3.select('#create-loop-button').on('click', createLoopForSelectedNode);
 
-// Add event listener to the custom loop creation button
-d3.select('#create-custom-loop-button').on('click', createCustomLoop);
+// Modify the nodeMouseDown function to initiate dragging
+function nodeMouseDown() {
+  // Prevent the default event propagation
+  d3.event.stopPropagation();
 
-force.on("tick", tick);
+  // Check if there is already a selected node
+  const firstNode = d3.selectAll('.selected').data()[0];
 
-// Start the force layout
-force.start();
+  // Clear any previous selection
+  clearSelection();
 
-// Functions
-function createColorButtons() {
-  colors.forEach(color => {
-    d3.select('body').append('button')
-      .style('background-color', color)
-      .attr('class', 'color-button')
-      .attr('data-color', color)
-      .text(color);
-  });
+  // Select the current node and apply styles
+  const node = d3.select(this);
+
+  node.classed('selected', true);
+  node.style('fill', currentColor); 
+  node.transition()
+    .duration(100)
+    .attr('r', 19)
+    .transition()
+    .duration(100)
+    .attr('r', radius)
+    .duration(300)
+    .attr('stroke-width', 3);
+    //.call(drag);
+
+  addEdge(firstNode, d3.select(this).data()[0]);
 }
 
-function changeNodeColor() {
-  const currentColor = d3.select(this).attr('data-color');
-  d3.selectAll('.selected').style('fill', currentColor);
+function clearSelection() {
+  d3.selectAll('.selected')
+    .classed('selected', false)
+    .transition()
+    .duration(500)
+    .attr('stroke-width', 1.5);
+
 }
 
 function addNode() {
@@ -112,7 +210,18 @@ function deleteNode() {
   }
 }
 
-/*
+function calculateDegrees() {
+  // Reset degrees
+  data.nodes.forEach(node => { node.degree = 0; });
+
+  // Calculate degree by counting how many links each node has
+  data.links.forEach(link => {
+    data.nodes[link.source.index].degree++;
+    data.nodes[link.target.index].degree++;
+  });
+}
+
+
 function addEdge(node1, node2) {
   if (!node1) return null;
   if (node1.index === node2.index) return null;
@@ -131,7 +240,8 @@ function addEdge(node1, node2) {
   data.nodes[node2.index].degree++;
 
   update();
-}*/
+}
+
 
 function addParallelEdge() {
   const selectedNodes = d3.selectAll('.selected').data();
@@ -142,6 +252,7 @@ function addParallelEdge() {
   }
 }
 
+/*
 function addEdge(node1, node2) {
   if (!node1 || !node2 || node1.index === node2.index) return null;
 
@@ -153,7 +264,7 @@ function addEdge(node1, node2) {
   data.nodes[node2.index].degree++;
 
   update();
-}
+}*/
 
 // Define the deleteEdge function
 function deleteEdge(d) {
@@ -169,9 +280,107 @@ function deleteEdge(d) {
 
 }
 
+// Function to create a loop for a selected node
+function createLoopForSelectedNode() {
+  const selectedNodeData = d3.selectAll('.selected').data()[0];
+  if (!selectedNodeData) {
+    alert("Please select a node to create a loop.");
+    return;
+  }
+
+  // Check if a loop already exists
+  const loopExists = data.links.some(link => link.source.index === selectedNodeData.index && link.target.index === selectedNodeData.index);
+  if (loopExists) {
+    alert("A loop already exists for this node.");
+    return;
+  }
+
+  // Add a loop to the selected node
+  data.links.push({ source: selectedNodeData.index, target: selectedNodeData.index });
+
+  // Update the graph
+  update();
+}
+
+// Add event listener to the loop creation button
+d3.select('#create-loop-button').on('click', createLoopForSelectedNode);
+
+// Update the loop information display
+function updateLoopInfo() {
+  // Select the loop list element
+  const loopList = d3.select('#loop-list');
+
+  // Remove any existing loop information
+  loopList.selectAll('li').remove();
+
+  // Filter the links to get only loops
+  const loops = data.links.filter(link => link.source.index === link.target.index);
+
+  // Append a list item for each loop with the vertex label
+  loops.forEach(loop => {
+    loopList.append('li')
+      .text(`Loop: Vertex ${loop.source.label}`);
+  });
+}
+
+// Add event listener to the custom loop creation button
+d3.select('#create-custom-loop-button').on('click', createCustomLoop);
+
+// Function to create a loop with a specified number of vertices
+function createCustomLoop() {
+  // Read the number of vertices from the input field
+  // const numberOfVertices = parseInt(document.getElementById('vertex-count-input').value);
+
+  // Get the input field element
+  const inputElement = document.getElementById('vertex-count-input');
+  
+  // Read the number of vertices from the input field
+  const numberOfVertices = parseInt(inputElement.value);
+
+  // Validate the input
+  if (isNaN(numberOfVertices) || numberOfVertices < 3 || numberOfVertices > 10) {
+    alert("Please enter a valid number of vertices between 3 and 10.");
+    return;
+  }
+
+  const angleStep = (Math.PI * 2) / numberOfVertices;
+  let lastNodeIndex = null;
+  let firstNodeIndex = null;
+
+  // Create the vertices
+  for (let i = 0; i < numberOfVertices; i++) {
+    const angle = i * angleStep;
+    const x = center[0] + 150 * Math.cos(angle);
+    const y = center[1] + 150 * Math.sin(angle);
+    const newNodeIndex = data.node_count++;
+    const newNode = {index: newNodeIndex, label: `v${newNodeIndex + 1}`, x: x, y: y, degree: 0};
+    data.nodes.push(newNode);
+
+    // Connect the vertices
+    if (lastNodeIndex !== null) {
+      addEdge(data.nodes[lastNodeIndex], newNode);
+    } else {
+      firstNodeIndex = newNodeIndex;
+    }
+    lastNodeIndex = newNodeIndex;
+  }
+
+  // Connect the last vertex to the first to close the loop
+  if (firstNodeIndex !== null && lastNodeIndex !== null) {
+    addEdge(data.nodes[lastNodeIndex], data.nodes[firstNodeIndex]);
+  }
+
+  // Update the graph
+  update();
+
+  // Clear the input field after creating the loop
+  inputElement.value = '';
+}
+
 function update() {
   link = link.data(data.links);
 
+  
   link.enter()
     .append("line")
     .attr("class", "link")
@@ -182,20 +391,18 @@ function update() {
   d3.selectAll('line')
     .moveToBack();
   
-  // Update the nodes
+  // Update nodes
   node = node.data(data.nodes);
 
-  // Enter any new nodes
   const nodeEnter = node.enter()
     .append("g")
     .attr("class", "node-group");
 
-    nodeEnter.append("circle")
+  nodeEnter.append("circle")
     .attr("class", "node")
     .attr("r", radius)
     .attr('stroke-width', 1.5)
-    .on('mousedown', nodeMouseDown);
-
+    .on('mousedown', nodeMouseDown)
 
   // Enter new labels
   nodeEnter.append("text")
@@ -205,9 +412,9 @@ function update() {
     .text(d => `${d.label}: ${d.degree}`); // Update the label with the degree
 
   // Update all nodes
-  node.select("circle")
-    .attr("r", radius)
-    .attr('stroke-width', 1.5);
+  //node.select("circle")
+  //  .attr("r", radius)
+  //  .attr('stroke-width', 1.5);
 
   // Update all labels
   node.select("text")
@@ -264,7 +471,6 @@ function update() {
   force.start();
   clearSelection();
 
-
   // Display the number of vertices and edges
   d3.select('#info-vertices').text(`Vertices: ${data.nodes.length}`);
   d3.select('#info-edges').text(`Edges: ${data.links.length}`);
@@ -274,188 +480,7 @@ function update() {
 
   // Update the loop information display
   updateLoopInfo();
-}
-
-function tick() {
-  force.on("tick", () => {
-    link
-      .attr('x1', (d) => d.source.x)
-      .attr('y1', (d) => d.source.y)
-      .attr('x2', (d) => d.target.x)
-      .attr('y2', (d) => d.target.y);
   
-    node
-      .attr('cx', (d) => d.x)
-      .attr('cy', (d) => d.y)
-      .call(force.drag());
-  
-    // Update node positions
-    svg.selectAll(".node-group")
-      .attr("transform", d => `translate(${d.x},${d.y})`);
-  
-    // Update loop positions
-    svg.selectAll('.loop')
-    .attr('d', d => {
-      const x = d.source.x;
-      const y = d.source.y;
-      const dx = radius * 2;
-      const dy = radius * 2;
-      return `M${x},${y} C${x + dx},${y - dy} ${x - dx},${y - dy} ${x},${y}`;
-    });
-  
-    // Update New link paths
-    link.attr('d', function(d) {
-      if (d.source.index === d.target.index) {
-        // Handle loops here
-      } else {
-        const dx = d.target.x - d.source.x,
-              dy = d.target.y - d.source.y,
-              dr = Math.sqrt(dx * dx + dy * dy);
-        // To change the arc, modify dr (the radius)
-        return `M${d.source.x},${d.source.y}A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
-      }
-    });
-  
-  });  
 }
 
-// Helper functions
-
-
-function nodeMouseDown() {
-  d3.event.stopPropagation();
-
-  const firstNode = d3.selectAll('.selected').data()[0];
-
-  clearSelection();
-
-  const node = d3.select(this);
-
-  node.classed('selected', true);
-  node.style('fill', currentColor); 
-  node.transition()
-    .duration(100)
-    .attr('r', 19)
-    .transition()
-    .duration(100)
-    .attr('r', radius)
-    .duration(300)
-    .attr('stroke-width', 3);
-
-  addEdge(firstNode, d3.select(this).data()[0]);
-}
-
-function clearSelection() {
-  d3.selectAll('.selected')
-    .classed('selected', false)
-    .transition()
-    .duration(500)
-    .attr('stroke-width', 1.5);
-}
-
-function calculateDegrees() {
-  // Reset degrees
-  data.nodes.forEach(node => { node.degree = 0; });
-
-  // Calculate degree by counting how many links each node has
-  data.links.forEach(link => {
-    data.nodes[link.source.index].degree++;
-    data.nodes[link.target.index].degree++;
-  });
-}
-
-// ... any other helper functions ...
-
-// Function to create a loop for a selected node
-function createLoopForSelectedNode() {
-  const selectedNodeData = d3.selectAll('.selected').data()[0];
-  if (!selectedNodeData) {
-    alert("Please select a node to create a loop.");
-    return;
-  }
-
-  // Check if a loop already exists
-  const loopExists = data.links.some(link => link.source.index === selectedNodeData.index && link.target.index === selectedNodeData.index);
-  if (loopExists) {
-    alert("A loop already exists for this node.");
-    return;
-  }
-
-  // Add a loop to the selected node
-  data.links.push({ source: selectedNodeData.index, target: selectedNodeData.index });
-
-  // Update the graph
-  update();
-}
-
-// Function to create a loop with a specified number of vertices
-function createCustomLoop() {
-  // Read the number of vertices from the input field
-  // const numberOfVertices = parseInt(document.getElementById('vertex-count-input').value);
-
-  // Get the input field element
-  const inputElement = document.getElementById('vertex-count-input');
-  
-  // Read the number of vertices from the input field
-  const numberOfVertices = parseInt(inputElement.value);
-
-  // Validate the input
-  if (isNaN(numberOfVertices) || numberOfVertices < 3 || numberOfVertices > 10) {
-    alert("Please enter a valid number of vertices between 3 and 10.");
-    return;
-  }
-
-  const angleStep = (Math.PI * 2) / numberOfVertices;
-  let lastNodeIndex = null;
-  let firstNodeIndex = null;
-
-  // Create the vertices
-  for (let i = 0; i < numberOfVertices; i++) {
-    const angle = i * angleStep;
-    const x = center[0] + 150 * Math.cos(angle);
-    const y = center[1] + 150 * Math.sin(angle);
-    const newNodeIndex = data.node_count++;
-    const newNode = {index: newNodeIndex, label: `v${newNodeIndex + 1}`, x: x, y: y, degree: 0};
-    data.nodes.push(newNode);
-
-    // Connect the vertices
-    if (lastNodeIndex !== null) {
-      addEdge(data.nodes[lastNodeIndex], newNode);
-    } else {
-      firstNodeIndex = newNodeIndex;
-    }
-    lastNodeIndex = newNodeIndex;
-  }
-
-  // Connect the last vertex to the first to close the loop
-  if (firstNodeIndex !== null && lastNodeIndex !== null) {
-    addEdge(data.nodes[lastNodeIndex], data.nodes[firstNodeIndex]);
-  }
-
-  // Update the graph
-  update();
-
-  // Clear the input field after creating the loop
-  inputElement.value = '';
-}
-
-// Update the loop information display
-function updateLoopInfo() {
-  // Select the loop list element
-  const loopList = d3.select('#loop-list');
-
-  // Remove any existing loop information
-  loopList.selectAll('li').remove();
-
-  // Filter the links to get only loops
-  const loops = data.links.filter(link => link.source.index === link.target.index);
-
-  // Append a list item for each loop with the vertex label
-  loops.forEach(loop => {
-    loopList.append('li')
-      .text(`Loop: Vertex ${loop.source.label}`);
-  });
-}
-
-// Call update to initialize the graph
-update();
+force.start();

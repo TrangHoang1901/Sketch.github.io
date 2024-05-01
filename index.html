@@ -11,15 +11,7 @@
 
 <body>
   <div class="intro">
-    <h1 class="title">Graph Builder</h1>
-    <p class="instructions">
-      Thank you for visiting my graph builder, using D3's force layout.
-      <br>(1) Click within the border to add a node.
-      <br>(2) Try dragging a node around the graph.
-      <br>(3) Select a node by clicking it.
-      <br>(4) What happens when you hit the delete key?
-      <br>(5) Select two nodes to add an edge between them.
-    </p>
+    <h1><span class="title">Graph Builder</span></h1>
   </div>
 
   <div id="graph-info">
@@ -27,7 +19,6 @@
     <p id="info-edges">Edges: 0</p>
     <p id="info-degrees">Degrees: </p>
   </div>
-
 
   <div id="Add a single loop button">
     <button id="create-loop-button">Create a single Loop</button>
@@ -38,7 +29,7 @@
     <button id="create-custom-loop-button">Create Custom Loop</button>
   </div>
 
-  <button id="addParallelEdgeButton">Add Parallel Edge</button>
+  <!--<button id="addParallelEdgeButton">Add Parallel Edge</button>-->
 
   <div>
     <p>Color Bar:</p>
@@ -46,5 +37,7 @@
 
   <script src="https://d3js.org/d3.v3.min.js"></script>
   <script src='./js/app.js'></script>
+
+
 </body>
 </html>
